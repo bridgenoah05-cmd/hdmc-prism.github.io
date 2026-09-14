@@ -1889,7 +1889,20 @@ function updateSelectedCarrierLabel(w,h,occupied){ensureCarrierLabels();const i=
 function updateCarrierLabels(w,h,occupied){ensureCarrierLabels();for(let i=0;i<carrierPool.length;i++){if(carrierPool[i].userData.carrierId===selectedCarrier)continue;placeCarrierLabel(i,w,h,occupied,false);}}
 function syncSelection(){if(!webglOK)return;if(selectionBox){scene.remove(selectionBox);selectionBox.geometry.dispose();selectionBox.material.dispose();}const group=groups.get(selected);if(group){selectionBox=new THREE.BoxHelper(group.g,0x63e9c2);selectionBox.material.transparent=true;selectionBox.material.opacity=.6;scene.add(selectionBox);}}
 function fitCamera(target,span,top=false){if(!webglOK)return;autoOrbit=false;$('orbit').classList.remove('active');$('orbit').setAttribute('aria-pressed','false');controls.target.copy(target);const distance=Math.max(28,span*(top?1.65:1.1),turnRadius*4/Math.max(.6,camera.aspect));camera.position.copy(target).add(top?new THREE.Vector3(0,distance*1.1,.01):new THREE.Vector3(0,distance*.83,distance*.83));camera.lookAt(target);controls.update();}
-function home(){fitCamera(new THREE.Vector3(-3,4,-(layoutInfo.route.turnSpan+layoutInfo.route.inclineRun)/2),lineLength+5);}
+function home(){
+ if(!webglOK||!layoutInfo)return;
+ autoOrbit=false;controls.autoRotate=false;
+ $('orbit').classList.remove('active');$('orbit').setAttribute('aria-pressed','false');
+ // Clear any remaining orbit/pan motion before restoring the reference view.
+ const damping=controls.enableDamping;controls.enableDamping=false;controls.update();
+ // Low, forward-facing overview: phosphate on the left, E-coat stairs on the right.
+ // Match the reference at a wide viewport; pull back to fit narrower screens.
+ const scale=Math.max(legLength/37.3,turnRadius/7.4);
+ const target=new THREE.Vector3(-2.96*scale,4*scale,1.62*scale);
+ const offset=new THREE.Vector3(9.95,10.06,43.76).multiplyScalar(scale*Math.max(1,(1407/751)/camera.aspect));
+ controls.target.copy(target);camera.position.copy(target).add(offset);
+ camera.lookAt(target);controls.update();controls.enableDamping=damping;
+}
 function viewSection(section){if(!webglOK)return;const x=section==='phosphate'?-turnRadius:turnRadius;fitCamera(new THREE.Vector3(section==='phosphate'?(x+layoutInfo.frameX)/2:x,section==='ecoat'?4:2,0),legLength*.8);}
 function resize(){if(!webglOK)return;const v=$('viewport'),w=v.clientWidth,h=v.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();drawSpark();}
 let lastFrame=0;
